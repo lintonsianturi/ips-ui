@@ -119,6 +119,8 @@
   // katalog (kaki cabang tidak tercatat), jadi tebal tidak ikut dicek.
   function expectedDims(c) {
     if (/(^|\/)T$/.test(c.sub || "")) return [c.w, c.h].filter((v) => v != null);
+    // Pintu/jendela: kusen & daun membuat tebal model > 90 mm, jadi hanya lebar & tinggi dicek.
+    if (c.cat === "DOOR_WINDOW") return [c.w, c.h].filter((v) => v != null);
     const e = [c.w, c.l, c.h].filter((v) => v != null);
     if (e.length < 3 && c.t != null) e.push(c.t);
     return e;
@@ -204,7 +206,7 @@
       }
       const meas = u ? bboxToMm(u) : null;
       const [st, label] = judge(info, meas);
-      return { modelId, id: null, wholeModel: true, name, ifcClass: "seluruh file", info, meas, st, label, qty: null };
+      return { modelId, id: null, ids, wholeModel: true, name, ifcClass: "seluruh file", info, meas, st, label, qty: null };
     })());
     return modelCache.get(modelId);
   }
@@ -380,7 +382,7 @@
     document.querySelectorAll("#rows button").forEach((b) =>
       b.toggleAttribute("aria-current", +b.dataset.i === i));
     status(`Dipilih: ${r.info.code || r.info.raw}`);
-    const selector = { modelObjectIds: [r.wholeModel ? { modelId: r.modelId } : { modelId: r.modelId, objectRuntimeIds: [r.id] }] };
+    const selector = { modelObjectIds: [r.wholeModel ? { modelId: r.modelId, objectRuntimeIds: r.ids } : { modelId: r.modelId, objectRuntimeIds: [r.id] }] };
     try {
       await call("viewer.setSelection", selector, "set");
       await call("viewer.setCamera", selector, { animationTime: 400 }).catch(() => {});

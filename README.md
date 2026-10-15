@@ -33,7 +33,13 @@ Nama menu di Trimble Connect bisa sedikit berbeda tergantung versi. Kalau tidak 
 
 ## 4. Syarat data
 
-Panel hanya dikenali kalau **nama elemen di IFC memuat kode IPS**. Kalau model dari SketchUp masih memakai nama lama, ganti nama komponennya dulu sebelum ekspor IFC.
+Kode IPS dibaca dari **nama elemen** di model. Kalau elemennya tidak berkode (mis. `Component#22` dari SketchUp), kode diambil dari **nama file** (mis. `IPS_DW_DRW_EXT_001.skp`) dan seluruh file dianggap satu panel; ukurannya = gabungan semua objek di file itu.
+
+Segmen tambahan di nama file seperti `EXT` pada `IPS_DW_DRW_EXT_001` otomatis dicocokkan ke kode katalog `IPS/DW/DRW/001`.
+
+Pintu & jendela hanya dicek lebar dan tingginya, karena kusen membuat tebal model lebih dari 90 mm.
+
+Setiap kali file diperbarui, naikkan angka `?v=` di `index.html` supaya browser tidak memakai versi lama.
 
 ## 5. Penyesuaian (bagian `CONFIG` di `app.js`)
 
