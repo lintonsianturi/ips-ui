@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AMODA IPS Dimensi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>Dimensi Panel IPS</span>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" id="tab-sel" aria-selected="true" data-view="sel">Terpilih</button>
+      <button role="tab" id="tab-all" aria-selected="false" data-view="all">Semua panel</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Panel terpilih -->
+    <section id="view-sel" class="view" role="tabpanel" aria-labelledby="tab-sel">
+      <div id="sel-list"></div>
+      <div class="actions" id="sel-actions" hidden>
+        <button class="btn primary" id="btn-show">Tampilkan dimensi di 3D</button>
+        <button class="btn" id="btn-clear">Hapus dimensi</button>
+      </div>
+    </section>
+
+    <!-- Semua panel -->
+    <section id="view-all" class="view" role="tabpanel" aria-labelledby="tab-all" hidden>
+      <div class="toolbar">
+        <button class="btn primary" id="btn-scan">Pindai model</button>
+        <select id="filter" aria-label="Filter status">
+          <option value="">Semua status</option>
+          <option value="cocok">Cocok katalog</option>
+          <option value="beda">Beda dari katalog</option>
+          <option value="tidak_dikenal">Kode tidak dikenal</option>
+        </select>
+      </div>
+      <p class="summary" id="summary">Pindai model untuk mendaftar semua panel berkode IPS beserta ukurannya.</p>
+      <ul class="rows" id="rows"></ul>
+      <div class="actions" id="all-actions" hidden>
+        <button class="btn" id="btn-csv">Unduh CSV</button>
+        <button class="btn" id="btn-copy">Salin tabel</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="status" id="status" role="status" aria-live="polite">Menghubungkan ke Trimble Connect…</footer>
+
+  <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
+  <script src="catalog.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

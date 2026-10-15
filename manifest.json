@@ -1,0 +1,7 @@
+{
+  "title": "AMODA IPS Dimensi",
+  "description": "Menampilkan kode dan dimensi panel AMODA IPS, mencocokkannya dengan katalog 218 panel, dan menggambar garis dimensi di 3D Viewer.",
+  "icon": "https://lintonsianturi.github.io/ips-ui/icon.png",
+  "url": "https://lintonsianturi.github.io/ips-ui/index.html",
+  "enabled": true
+}

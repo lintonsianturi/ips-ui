@@ -1,0 +1,118 @@
+:root {
+  --ink: #1f2a36;
+  --steel: #66717e;
+  --line: #d9dee4;
+  --surface: #f5f7f9;
+  --paper: #ffffff;
+  --tag: #f4c430;
+  --tag-ink: #2a2200;
+  --ok: #2f7d4f;
+  --warn: #b8620a;
+  --bad: #b42318;
+  --focus: #2563c9;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #e6ebf0; --steel: #9aa5b1; --line: #33404d; --surface: #1a222b; --paper: #222c36;
+    --ok: #5cc285; --warn: #f0a04b; --bad: #f2786d; --focus: #7aa7ff; color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; display: flex; flex-direction: column;
+  font: 14px/1.45 "Barlow", "Segoe UI", Roboto, Arial, sans-serif;
+  color: var(--ink); background: var(--surface);
+}
+button, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Header */
+.top { background: var(--paper); border-bottom: 1px solid var(--line); padding: 12px 14px 0; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; }
+.brand-mark { width: 14px; height: 18px; background: var(--tag); border-radius: 2px 2px 7px 7px; position: relative; }
+.brand-mark::after { content: ""; position: absolute; left: 5px; top: 3px; width: 4px; height: 4px; border-radius: 50%; background: var(--paper); }
+.tabs { display: flex; gap: 18px; margin-top: 10px; }
+.tabs button {
+  background: none; border: 0; padding: 6px 0 9px; cursor: pointer; color: var(--steel);
+  border-bottom: 2px solid transparent; font-weight: 500;
+}
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+
+main { flex: 1; overflow: auto; padding: 14px; }
+.view[hidden] { display: none; }
+
+/* Empty state */
+.empty { color: var(--steel); padding: 28px 6px; text-align: center; }
+.empty strong { display: block; color: var(--ink); font-weight: 600; margin-bottom: 4px; }
+
+/* Kartu panel */
+.panel { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; margin-bottom: 12px; }
+.panel-name { flex-basis: 100%; }
+
+/* Label kode: tag QC kuning workshop */
+.code-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font: 700 18px/1 "Barlow Condensed", "Arial Narrow", sans-serif; letter-spacing: .01em;
+  background: var(--tag); color: var(--tag-ink); padding: 7px 11px 7px 9px; border-radius: 3px 10px 10px 3px;
+}
+.code-tag::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--paper); flex: none; }
+.code-tag.none { background: var(--line); color: var(--ink); }
+.panel-name { color: var(--steel); font-size: 12.5px; overflow-wrap: anywhere; }
+
+.pill { font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.pill.cocok { color: var(--ok); } .pill.beda { color: var(--warn); }
+.pill.tidak_dikenal { color: var(--bad); } .pill.tanpa_kode { color: var(--steel); }
+
+/* Angka dimensi */
+.dims { display: grid; grid-template-columns: 64px 1fr; row-gap: 6px; align-items: baseline; }
+.dims dt { color: var(--steel); font-size: 12.5px; }
+.dims dd { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.num { font: 600 17px/1.1 "Barlow Condensed", "Arial Narrow", sans-serif; font-variant-numeric: tabular-nums; }
+.num small { font: 500 11.5px "Barlow", sans-serif; color: var(--steel); margin-right: 3px; }
+.unit { color: var(--steel); font-size: 12px; }
+.num .unit { font: 400 12px "Barlow", sans-serif; margin-left: 3px; }
+.num { white-space: nowrap; }
+.note { margin: 10px 0 0; font-size: 12.5px; color: var(--steel); }
+.note.warn { color: var(--warn); }
+
+/* Tombol */
+.actions, .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.toolbar { margin: 0 0 10px; }
+/* Tombol dimensi menempel di bawah supaya tetap terlihat walau kartu banyak */
+#sel-actions { position: sticky; bottom: -14px; margin: 0 -14px -14px; padding: 10px 14px 14px;
+  background: var(--surface); border-top: 1px solid var(--line); }
+.btn {
+  border: 1px solid var(--line); background: var(--paper); border-radius: 6px;
+  padding: 7px 12px; cursor: pointer; font-weight: 500;
+}
+.btn:hover { border-color: var(--steel); }
+.btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.btn:disabled { opacity: .5; cursor: progress; }
+select { border: 1px solid var(--line); background: var(--paper); border-radius: 6px; padding: 6px 8px; flex: 1; min-width: 0; }
+
+/* Daftar semua panel */
+.summary { color: var(--steel); font-size: 13px; margin: 0 0 10px; }
+.summary b { color: var(--ink); }
+.rows { list-style: none; margin: 0 0 12px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); overflow: hidden; }
+.rows:empty { display: none; }
+.rows li + li { border-top: 1px solid var(--line); }
+.rows button {
+  width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; text-align: left;
+  background: none; border: 0; padding: 9px 12px; cursor: pointer;
+}
+.rows button:hover { background: var(--surface); }
+.rows button[aria-current] { background: var(--surface); box-shadow: inset 3px 0 0 var(--tag); }
+.r-code { font: 600 15px/1.2 "Barlow Condensed", "Arial Narrow", sans-serif; }
+.r-dims { font-size: 12.5px; color: var(--steel); font-variant-numeric: tabular-nums; grid-column: 1; }
+.r-st { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-size: 15px; font-weight: 700; }
+.r-st.cocok { color: var(--ok); } .r-st.beda { color: var(--warn); } .r-st.tidak_dikenal { color: var(--bad); }
+
+/* Status bar */
+.status { border-top: 1px solid var(--line); background: var(--paper); color: var(--steel); font-size: 12.5px; padding: 8px 14px; }
+.status.err { color: var(--bad); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
