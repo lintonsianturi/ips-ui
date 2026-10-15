@@ -47,16 +47,23 @@
     const m = str.toUpperCase().match(/IPS(?:[\/_\-\\ .]+[A-Z0-9]+)+/);
     if (!m) return null;
     const parts = m[0].split(/[\/_\-\\ .]+/).filter(Boolean);
+    if (/^(SKP|IFC|RVT|DWG|TRB)$/.test(parts[parts.length - 1])) parts.pop(); // ekstensi file
     const raw = parts.join("/");
-    for (let n = parts.length; n >= 3; n--) {
-      const cand = parts.slice(0, n);
-      const padded = cand.map((p) => (/^\d{1,2}$/.test(p) ? p.padStart(3, "0") : p));
-      for (const c of [cand, padded]) {
-        const code = c.join("/");
-        if (CAT[code]) return { code, raw };
+    const lookup = (ps) => {
+      for (let n = ps.length; n >= 3; n--) {
+        const cand = ps.slice(0, n);
+        const padded = cand.map((p) => (/^\d{1,2}$/.test(p) ? p.padStart(3, "0") : p));
+        for (const c of [cand, padded]) if (CAT[c.join("/")]) return c.join("/");
       }
+      return null;
+    };
+    let code = lookup(parts);
+    // Nama file kadang punya segmen tambahan, mis. IPS_DW_DRW_EXT_001 -> katalog IPS/DW/DRW/001.
+    // Coba buang satu segmen huruf (bukan IPS & kategori) bila tidak ketemu.
+    for (let i = 2; !code && i < parts.length; i++) {
+      if (/^[A-Z]+$/.test(parts[i])) code = lookup(parts.filter((_, j) => j !== i));
     }
-    return { code: null, raw };
+    return { code, raw };
   }
 
   function collectStrings(obj, acc = [], depth = 0) {
@@ -160,6 +167,48 @@
     return results;
   }
 
+  // ------------------------------------------------------------------ panel = seluruh file
+  // Model SketchUp per panel (mis. IPS_DW_DRW_EXT_001.skp) tidak punya kode di nama
+  // elemennya; kodenya ada di nama file. Dalam kasus itu seluruh file dianggap satu panel
+  // dan ukurannya diambil dari gabungan kotak ukur semua objek di file tersebut.
+  const modelCache = new Map();
+
+  function modelPanel(modelId) {
+    if (!modelCache.has(modelId)) modelCache.set(modelId, (async () => {
+      let name = "";
+      try {
+        const ms = await call("viewer.getModels");
+        const m = (ms || []).find((x) => x.id === modelId || x.modelId === modelId);
+        name = (m && (m.name || m.fileName)) || "";
+      } catch (_) {}
+      const info = parseCode(name);
+      if (!info) return null;
+      let ids = [];
+      try {
+        const all = await call("viewer.getObjects");
+        const mo = (all || []).find((x) => x.modelId === modelId);
+        ids = ((mo && mo.objects) || []).map((o) => o.id);
+      } catch (_) {}
+      let u = null;
+      for (let i = 0; i < ids.length; i += CONFIG.BATCH) {
+        const boxes = await call("viewer.getObjectBoundingBoxes", modelId, ids.slice(i, i + CONFIG.BATCH)).catch(() => []);
+        (boxes || []).forEach((b) => {
+          const bb = b.boundingBox || b;
+          if (!bb || !bb.min || !bb.max) return;
+          if (!u) u = { min: { ...bb.min }, max: { ...bb.max } };
+          else ["x", "y", "z"].forEach((k) => {
+            u.min[k] = Math.min(u.min[k], bb.min[k]);
+            u.max[k] = Math.max(u.max[k], bb.max[k]);
+          });
+        });
+      }
+      const meas = u ? bboxToMm(u) : null;
+      const [st, label] = judge(info, meas);
+      return { modelId, id: null, wholeModel: true, name, ifcClass: "seluruh file", info, meas, st, label, qty: null };
+    })());
+    return modelCache.get(modelId);
+  }
+
   // ------------------------------------------------------------------ tampilan: terpilih
   // Satuan "mm" ditempel ke angka terakhir supaya tidak turun baris sendirian.
   function numList(pairs) {
@@ -180,6 +229,7 @@
         ? "Geometri atap di IFC sering tidak akurat. Pakai angka katalog sebagai acuan."
         : "Ukuran model tidak sama dengan katalog. Cek apakah panel diputar (kotak ukur mengikuti sumbu dunia) atau geometrinya keliru."}</p>`;
     }
+    if (r.wholeModel) notes += `<p class="note">Kode dibaca dari nama file; ukuran = gabungan semua objek di file ini.</p>`;
     if (c && c.note) notes += `<p class="note">${esc(c.note)}</p>`;
     const qty = r.qty ? Object.entries(r.qty).map(([k, v]) => `<span class="num"><small>${esc(k)}</small>${esc(v)}</span>`).join("") : "";
     return `<article class="panel">
@@ -215,10 +265,20 @@
       if (!groups.length) { selected = []; renderSelected(); status("Siap. Klik panel di model."); return; }
       status("Membaca panel terpilih…");
       const all = [];
-      for (const g of groups) all.push(...(await analyze(g.modelId, g.objectRuntimeIds)));
+      let fromFile = 0;
+      for (const g of groups) {
+        const res = await analyze(g.modelId, g.objectRuntimeIds);
+        if (!res.some((r) => r.info)) {
+          const mp = await modelPanel(g.modelId);
+          if (mp) { all.push(mp); fromFile++; if (res.length > 5) continue; } // banyak objek: cukup kartu file
+        }
+        all.push(...res);
+      }
       selected = all;
       renderSelected();
-      status(`${all.length} objek terpilih.`);
+      status(fromFile
+        ? `Kode dari nama file (${groups.reduce((n, g) => n + g.objectRuntimeIds.length, 0)} objek terpilih).`
+        : `${all.length} objek terpilih.`);
     } catch (e) { status(`Gagal membaca seleksi: ${e.message}`, true); }
   }
 
@@ -283,8 +343,9 @@
         const ids = (m.objects || []).map((o) => o.id);
         total += ids.length;
         status(`Memeriksa ${ids.length.toLocaleString("id-ID")} objek…`);
-        const res = await analyze(m.modelId, ids);
-        out.push(...res.filter((r) => r.info));
+        const res = (await analyze(m.modelId, ids)).filter((r) => r.info);
+        if (!res.length) { const mp = await modelPanel(m.modelId); if (mp) res.push(mp); }
+        out.push(...res);
       }
       out.forEach((r, i) => (r.idx = i));
       scanned = out;
@@ -302,7 +363,7 @@
     const c = scanned.reduce((a, r) => ((a[r.st] = (a[r.st] || 0) + 1), a), {});
     $("summary").innerHTML = scanned.length
       ? `<b>${scanned.length}</b> panel. Cocok ${c.cocok || 0}, beda ${c.beda || 0}, tidak dikenal ${c.tidak_dikenal || 0}.`
-      : "Tidak ditemukan panel berkode IPS. Pastikan nama elemen di IFC memakai kode seperti IPS/W/EXT/001.";
+      : "Tidak ditemukan panel berkode IPS. Pastikan nama elemen atau nama file memakai kode seperti IPS/W/EXT/001 atau IPS_W_EXT_001.";
     const icon = { cocok: "✓", beda: "⚠", tidak_dikenal: "?" };
     $("rows").innerHTML = rows.map((r) => `<li><button data-i="${r.idx}"${r.idx === activeRow ? ' aria-current="true"' : ""}>
         <span class="r-code">${esc(r.info.code || r.info.raw)}</span>
@@ -319,7 +380,7 @@
     document.querySelectorAll("#rows button").forEach((b) =>
       b.toggleAttribute("aria-current", +b.dataset.i === i));
     status(`Dipilih: ${r.info.code || r.info.raw}`);
-    const selector = { modelObjectIds: [{ modelId: r.modelId, objectRuntimeIds: [r.id] }] };
+    const selector = { modelObjectIds: [r.wholeModel ? { modelId: r.modelId } : { modelId: r.modelId, objectRuntimeIds: [r.id] }] };
     try {
       await call("viewer.setSelection", selector, "set");
       await call("viewer.setCamera", selector, { animationTime: 400 }).catch(() => {});
